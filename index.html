@@ -1,0 +1,1404 @@
+TYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>kaizen - WhatsApp Unbanned</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #08090c;
+    --dark: #0c0e14;
+    --panel: #0f1117;
+    --raised: #151821;
+    --raised2: #1c202c;
+    --border: #202432;
+    --border-hover: #2f374f;
+
+    --blue: #2563eb;
+    --blue-bright: #60a5fa;
+    --blue-deep: #133b82;
+    --blue-dim: #93c5fd;
+    --blue-glow: rgba(37, 99, 235, 0.35);
+    --blue-faint: rgba(37, 99, 235, 0.12);
+
+    --text: #cbd5e1;
+    --text-dim: #8b94a5;
+    --white: #f8fafc;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --danger: #ef4444;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Latar belakang kotak-kotak halus & cahaya ambien biru */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 50% -10%, rgba(37, 99, 235, 0.16), transparent 55%),
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Cahaya lembut sudut bawah */
+  body::after {
+    content: '';
+    position: fixed;
+    width: 480px;
+    height: 480px;
+    right: -140px;
+    bottom: -140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(29, 78, 216, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  canvas.noise {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.012;
+  }
+
+  .grid-bg, .corner-deco { display: none; }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.92); }
+  }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── Header Bar ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: rgba(8, 9, 12, 0.78);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--white);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo::before {
+    content: '🛡';
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #163e87, #0d2554);
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    box-shadow: 0 4px 14px rgba(19, 59, 130, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  .terminal-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    padding-left: 44px;
+    letter-spacing: 0.4px;
+  }
+
+  .status-bar {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--raised);
+    border: 1px solid var(--border);
+    padding: 7px 13px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+    animation: pulseDot 2s infinite;
+  }
+
+  /* ── Ticker Strip ── */
+  .ticker {
+    background: rgba(19, 59, 130, 0.22);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.22);
+    padding: 9px 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+  }
+
+  .ticker-inner {
+    display: flex;
+    animation: ticker 34s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--blue-bright);
+    letter-spacing: 0.6px;
+    padding-right: 64px;
+  }
+
+  /* ── Main Container ── */
+  .container {
+    position: relative;
+    z-index: 10;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  .page {
+    display: none;
+    animation: fadeSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .page.active { display: block; }
+
+  /* ── Hero Section ── */
+  .hero {
+    text-align: left;
+    margin-bottom: 36px;
+    max-width: 680px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(2.1rem, 5vw, 3.2rem);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+    letter-spacing: -1.4px;
+    margin-bottom: 16px;
+  }
+
+  .hero-title span {
+    display: block;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+
+  .hero-cert {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: linear-gradient(145deg, rgba(19, 59, 130, 0.28), rgba(15, 17, 23, 0.92));
+    border: 1px solid rgba(59, 130, 246, 0.32);
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--blue-bright);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  /* ── Section Divider ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 32px 0 22px;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .divider-text {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  /* ── Warning Strip ── */
+  .warning-strip {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    background: linear-gradient(145deg, rgba(19, 59, 130, 0.2), rgba(15, 17, 23, 0.95));
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 26px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  }
+
+  .warning-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    color: var(--blue-bright);
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .warning-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  /* ── Ban Type Cards (Page 1) ── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .option-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 22px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3);
+  }
+
+  .option-card:hover {
+    background: var(--raised);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px rgba(19, 59, 130, 0.32);
+  }
+
+  .card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #163e87, #0d2554);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: var(--white);
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(19, 59, 130, 0.35);
+  }
+
+  .card-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--blue-bright);
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  .card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.2px;
+    margin-bottom: 10px;
+  }
+
+  .card-desc {
+    font-size: 0.83rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    flex: 1;
+    margin-bottom: 18px;
+  }
+
+  .card-arrow {
+    align-self: flex-start;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--raised2);
+    border: 1px solid var(--border);
+    color: var(--blue-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .option-card:hover .card-arrow {
+    background: var(--blue-deep);
+    border-color: rgba(96, 165, 250, 0.45);
+    color: var(--white);
+    transform: translateX(3px);
+  }
+
+  /* ── Sub-Page Header & Breadcrumb ── */
+  .page-header {
+    margin-bottom: 30px;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    background: var(--raised2);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: var(--blue-bright);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--blue-bright);
+    font-weight: 600;
+  }
+
+  .breadcrumb-sep {
+    color: var(--border-hover);
+  }
+
+  .page-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+  }
+
+  .page-title span {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 10px;
+    line-height: 1.65;
+    max-width: 620px;
+  }
+
+  /* ── Version Selection Cards (Pages 2, 3, 4) ── */
+  .version-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .version-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+  }
+
+  .version-card:hover {
+    background: var(--raised);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(19, 59, 130, 0.3);
+  }
+
+  .version-num {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #163e87, #0d2554);
+    border: 1px solid rgba(59, 130, 246, 0.42);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .version-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .version-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--blue-bright);
+    margin-bottom: 4px;
+  }
+
+  .version-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .version-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--blue-bright);
+    flex-shrink: 0;
+  }
+
+  /* ── Form Panel (Page 5) ── */
+  .form-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.36);
+  }
+
+  .form-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  }
+
+  .form-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.3px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--dark);
+    border: 1px solid var(--border-hover);
+    border-radius: 12px;
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    padding: 15px 18px;
+    outline: none;
+    transition: all 0.2s ease;
+    letter-spacing: 1px;
+  }
+
+  .form-input:focus {
+    border-color: #3b82f6;
+    background: #0a0c12;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  }
+
+  .form-input::placeholder {
+    color: #475569;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+  }
+
+  .form-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .form-hint span {
+    color: var(--blue-bright);
+    font-weight: 600;
+  }
+
+  /* ── Info Box inside Form ── */
+  .info-box {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-left: 3px solid #3b82f6;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin: 22px 0;
+    font-size: 0.84rem;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .info-box-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--blue-bright);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Submit Button (Royal Blue Gradient) ── */
+  .submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 15px 22px;
+    background: linear-gradient(180deg, #1b4ea8 0%, #133b82 100%);
+    border: 1px solid rgba(96, 165, 250, 0.45);
+    border-radius: 12px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 22px rgba(19, 59, 130, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .submit-btn:hover {
+    background: linear-gradient(180deg, #225cc4 0%, #174699 100%);
+    border-color: rgba(147, 197, 253, 0.65);
+    box-shadow: 0 8px 28px rgba(37, 99, 235, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+  }
+
+  .submit-btn:active { transform: scale(0.99); }
+
+  .request-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.8px;
+    margin-top: 14px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    position: relative;
+    z-index: 10;
+    padding: 26px 32px;
+    border-top: 1px solid var(--border);
+    background: rgba(8, 9, 12, 0.6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  .footer-text span { color: var(--blue-bright); }
+
+  @media(max-width: 768px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .version-grid { grid-template-columns: 1fr; }
+  }
+
+  @media(max-width: 600px) {
+    .header { padding: 16px 18px; }
+    .terminal-line { display: none; }
+    .container { padding: 34px 18px 54px; }
+    .form-panel { padding: 22px 18px; }
+    .footer { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas class="noise" id="noise"></canvas>
+<div class="grid-bg"></div>
+
+<!-- Corner decorations -->
+<div class="corner-deco corner-tl"></div>
+<div class="corner-deco corner-br"></div>
+
+<!-- Header -->
+<header class="header">
+  <div>
+    <div class="logo">Unbanned WhatsApp</div>
+    <div class="terminal-line">SYSTEM SECURE · ENCRYPTED</div>
+  </div>
+  <div class="status-bar">
+    <span class="status-dot"></span>kaizen Digital
+  </div>
+</header>
+
+<!-- Ticker -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-text">⚠ PORTAL RASMI PERMOHONAN UNBAN WHATSAPP &nbsp;///&nbsp; PASTIKAN NOMBOR BETUL SEBELUM HANTAR &nbsp;///&nbsp; PROSES MENGAMBIL MASA 24-72 JAM &nbsp;///&nbsp; HANYA SATU PERMOHONAN SETIAP NOMBOR &nbsp;///&nbsp; PORTAL RASMI PERMOHONAN UNBAN WHATSAPP &nbsp;///&nbsp; PASTIKAN NOMBOR BETUL SEBELUM HANTAR &nbsp;///&nbsp; PROSES MENGAMBIL MASA 24-72 JAM &nbsp;///&nbsp; HANYA SATU PERMOHONAN SETIAP NOMBOR &nbsp;///&nbsp;</span>
+    <span class="ticker-text">⚠ PORTAL RASMI PERMOHONAN UNBAN WHATSAPP &nbsp;///&nbsp; PASTIKAN NOMBOR BETUL SEBELUM HANTAR &nbsp;///&nbsp; PROSES MENGAMBIL MASA 24-72 JAM &nbsp;///&nbsp; HANYA SATU PERMOHONAN SETIAP NOMBOR &nbsp;///&nbsp; PORTAL RASMI PERMOHONAN UNBAN WHATSAPP &nbsp;///&nbsp; PASTIKAN NOMBOR BETUL SEBELUM HANTAR &nbsp;///&nbsp; PROSES MENGAMBIL MASA 24-72 JAM &nbsp;///&nbsp; HANYA SATU PERMOHONAN SETIAP NOMBOR &nbsp;///&nbsp;</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 1: MAIN / CHOOSE BAN TYPE -->
+<!-- ============================================================ -->
+<div id="page-main" class="page active">
+  <div class="container">
+
+    <div class="hero">
+      <div class="hero-eyebrow">// PERMOHONAN RASMI //</div>
+      <h1 class="hero-title">
+        WHATSAPP
+        <span>kaizen Digital</span>
+      </h1>
+      <p class="hero-subtitle">
+        kaizen UnbannedWa ini adalah platform permohonan rasmi untuk membuka semula akaun WhatsApp yang telah dikenakan sekatan. Pilih jenis ban yang diterima untuk meneruskan proses permohonan.
+      </p>
+      <span class="hero-cert">// Powered By kaizen Official kaizenV //</span>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">PILIH JENIS BAN</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="warning-strip">
+      <span class="warning-icon">⬥</span>
+      <div class="warning-text">
+        PENTING: Pastikan anda memilih jenis ban yang betul. Pemilihan yang salah boleh melambatkan proses semakan. Semua maklumat yang dihantar adalah SULIT dan hanya digunakan untuk tujuan permohonan sahaja.
+      </div>
+    </div>
+
+    <div class="options-grid">
+
+      <div class="option-card" onclick="goToPage('page-spam')">
+        <div class="card-icon">⌬</div>
+        <div class="card-tag">// TYPE-01 //</div>
+        <div class="card-title">UNBAN SPAM</div>
+        <p class="card-desc">Akaun dikenakan sekatan akibat aktiviti spam atau penghantaran mesej beramai-ramai yang melanggar polisi WhatsApp.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="option-card" onclick="goToPage('page-perm-fresh')">
+        <div class="card-icon">𖤗</div>
+        <div class="card-tag">// TYPE-02 //</div>
+        <div class="card-title">UNBAN PERMANENT FRESH</div>
+        <p class="card-desc">Akaun baharu yang dikenakan larangan kekal — biasanya berlaku dalam tempoh 24 jam pertama penggunaan.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="option-card" onclick="goToPage('page-perm-hard')">
+        <div class="card-icon">𖤗</div>
+        <div class="card-tag">// TYPE-03 //</div>
+        <div class="card-title">UNBAN PERMANENT HARD</div>
+        <p class="card-desc">Larangan kekal bertahap tinggi. Akaun diblok secara menyeluruh dan memerlukan proses semakan yang lebih mendalam.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- PAGE 2: UNBAN SPAM — CHOOSE VERSION -->
+<!-- ============================================================ -->
+<div id="page-spam" class="page">
+  <div class="container">
+    <div class="page-header">
+      <button class="back-btn" onclick="goToPage('page-main')">← KEMBALI</button>
+      <div class="breadcrumb">
+        <span>KAIZEN</span>
+        <span class="breadcrumb-sep">///</span>
+        <span>UNBAN SPAM</span>
+      </div>
+      <h2 class="page-title">UNBAN <span>SPAM</span></h2>
+      <p class="page-desc">Pilih versi borang permohonan berdasarkan kategori spam yang dikenakan. Setiap versi direka untuk kes yang berbeza.</p>
+    </div>
+
+    <div class="version-grid">
+      <div class="version-card" onclick="goToForm('SPAM', 'V1')">
+        <div class="version-num">01</div>
+        <div class="version-info">
+          <div class="version-label">// SPAM //</div>
+          <div class="version-title">UNBAN SPAM V1</div>
+        </div>
+        <div class="version-badge">STANDARD</div>
+      </div>
+      <div class="version-card" onclick="goToForm('SPAM', 'V2')">
+        <div class="version-num">02</div>
+        <div class="version-info">
+          <div class="version-label">// SPAM //</div>
+          <div class="version-title">UNBAN SPAM V2</div>
+        </div>
+        <div class="version-badge">PRO</div>
+      </div>
+      <div class="version-card" onclick="goToForm('SPAM', 'V3')">
+        <div class="version-num">03</div>
+        <div class="version-info">
+          <div class="version-label">// SPAM //</div>
+          <div class="version-title">UNBAN SPAM V3</div>
+        </div>
+        <div class="version-badge">ADVANCED</div>
+      </div>
+      <div class="version-card" onclick="goToForm('SPAM', 'V4')">
+        <div class="version-num">04</div>
+        <div class="version-info">
+          <div class="version-label">// SPAM //</div>
+          <div class="version-title">UNBAN SPAM V4</div>
+        </div>
+        <div class="version-badge">ELITE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- PAGE 3: UNBAN PERMANENT FRESH — CHOOSE VERSION -->
+<!-- ============================================================ -->
+<div id="page-perm-fresh" class="page">
+  <div class="container">
+    <div class="page-header">
+      <button class="back-btn" onclick="goToPage('page-main')">← KEMBALI</button>
+      <div class="breadcrumb">
+        <span>PORTAL</span>
+        <span class="breadcrumb-sep">///</span>
+        <span>UNBAN PERMANENT FRESH</span>
+      </div>
+      <h2 class="page-title">UNBAN PERMANENT <span>FRESH</span></h2>
+      <p class="page-desc">Pilih versi borang permohonan untuk akaun baharu yang terkena larangan kekal dalam tempoh singkat.</p>
+    </div>
+
+    <div class="version-grid">
+      <div class="version-card" onclick="goToForm('PERMANENT FRESH', 'V1')">
+        <div class="version-num">01</div>
+        <div class="version-info">
+          <div class="version-label">// PERM FRESH //</div>
+          <div class="version-title">UNBAN PERM FRESH V1</div>
+        </div>
+        <div class="version-badge">STANDARD</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT FRESH', 'V2')">
+        <div class="version-num">02</div>
+        <div class="version-info">
+          <div class="version-label">// PERM FRESH //</div>
+          <div class="version-title">UNBAN PERM FRESH V2</div>
+        </div>
+        <div class="version-badge">PRO</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT FRESH', 'V3')">
+        <div class="version-num">03</div>
+        <div class="version-info">
+          <div class="version-label">// PERM FRESH //</div>
+          <div class="version-title">UNBAN PERM FRESH V3</div>
+        </div>
+        <div class="version-badge">ADVANCED</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT FRESH', 'V4')">
+        <div class="version-num">04</div>
+        <div class="version-info">
+          <div class="version-label">// PERM FRESH //</div>
+          <div class="version-title">UNBAN PERM FRESH V4</div>
+        </div>
+        <div class="version-badge">ELITE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- PAGE 4: UNBAN PERMANENT HARD — CHOOSE VERSION -->
+<!-- ============================================================ -->
+<div id="page-perm-hard" class="page">
+  <div class="container">
+    <div class="page-header">
+      <button class="back-btn" onclick="goToPage('page-main')">← KEMBALI</button>
+      <div class="breadcrumb">
+        <span>PORTAL</span>
+        <span class="breadcrumb-sep">///</span>
+        <span>UNBAN PERMANENT HARD</span>
+      </div>
+      <h2 class="page-title">UNBAN PERMANENT <span>HARD</span></h2>
+      <p class="page-desc">Pilih versi borang permohonan untuk akaun yang dikenakan larangan kekal peringkat tinggi yang memerlukan rayuan khusus.</p>
+    </div>
+
+    <div class="version-grid">
+      <div class="version-card" onclick="goToForm('PERMANENT HARD', 'V1')">
+        <div class="version-num">01</div>
+        <div class="version-info">
+          <div class="version-label">// PERM HARD //</div>
+          <div class="version-title">UNBAN PERM HARD V1</div>
+        </div>
+        <div class="version-badge">STANDARD</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT HARD', 'V2')">
+        <div class="version-num">02</div>
+        <div class="version-info">
+          <div class="version-label">// PERM HARD //</div>
+          <div class="version-title">UNBAN PERM HARD V2</div>
+        </div>
+        <div class="version-badge">PRO</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT HARD', 'V3')">
+        <div class="version-num">03</div>
+        <div class="version-info">
+          <div class="version-label">// PERM HARD //</div>
+          <div class="version-title">UNBAN PERM HARD V3</div>
+        </div>
+        <div class="version-badge">ADVANCED</div>
+      </div>
+      <div class="version-card" onclick="goToForm('PERMANENT HARD', 'V4')">
+        <div class="version-num">04</div>
+        <div class="version-info">
+          <div class="version-label">// PERM HARD //</div>
+          <div class="version-title">UNBAN PERM HARD V4</div>
+        </div>
+        <div class="version-badge">ELITE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- PAGE 5: PHONE NUMBER FORM -->
+<!-- ============================================================ -->
+<div id="page-form" class="page">
+  <div class="container">
+    <div class="page-header">
+      <button class="back-btn" id="form-back-btn" onclick="goBack()">← KEMBALI</button>
+      <div class="breadcrumb">
+        <span>PORTAL</span>
+        <span class="breadcrumb-sep">///</span>
+        <span id="crumb-type">-</span>
+        <span class="breadcrumb-sep">///</span>
+        <span id="crumb-version">-</span>
+      </div>
+      <h2 class="page-title" id="form-title">BORANG <span>PERMOHONAN</span></h2>
+      <p class="page-desc">Masukkan nombor telefon yang telah dikenakan sekatan. Pastikan nombor adalah tepat beserta kod negara.</p>
+    </div>
+
+    <div class="form-panel">
+
+      <div class="warning-strip" style="margin-bottom:28px;">
+        <span class="warning-icon">⬥</span>
+        <div class="warning-text">
+          Borang ini akan dibuka dalam aplikasi Gmail anda. Teks permohonan akan diisi secara automatik. Semak semula nombor telefon sebelum menghantar.
+        </div>
+      </div>
+
+      <label class="form-label" for="phone-input">NOMBOR TELEFON YANG DIKENAKAN SEKATAN</label>
+      <input
+        class="form-input"
+        type="tel"
+        id="phone-input"
+        placeholder="+60112345678"
+        maxlength="20"
+      />
+      <div class="form-hint"><span>CONTOH FORMAT:</span> +60112345678 &nbsp;·&nbsp; +601123456789 &nbsp;·&nbsp; +65XXXXXXXX</div>
+
+      <div class="info-box">
+        <div class="info-box-title">⬥ MAKLUMAT PENTING</div>
+        Selepas menekan butang "HANTAR PERMOHONAN", Gmail akan dibuka secara automatik dengan teks permohonan yang telah disediakan mengikut jenis dan versi yang dipilih. Anda hanya perlu klik <strong style="color:var(--white)">SEND / HANTAR</strong> dalam Gmail.
+      </div>
+
+      <button class="submit-btn" onclick="submitForm()">
+        ⬥ HANTAR PERMOHONAN ⬥
+      </button>
+
+      <div class="request-id" id="request-id" style="margin-top:14px;text-align:right;"></div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-text">© 2026 WA UNBAN PORTAL &nbsp;·&nbsp; <span>SEMUA HAK TERPELIHARA</span></div>
+  <div class="footer-text"><span>ENC://</span> SSL-256-BIT &nbsp;·&nbsp; DATA SULIT</div>
+</footer>
+
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let currentType = '';
+let currentVersion = '';
+let previousPage = 'page-main';
+
+// ============================================================
+// EMAIL CONFIGURATION — TUKAR MAKLUMAT DI BAWAH INI
+// ============================================================
+
+// ▼▼▼ TUKAR EMAIL PENERIMA DI SINI ▼▼▼
+const RECIPIENT_EMAIL = 'support@whatsapp.com';
+// ▲▲▲ TUKAR EMAIL PENERIMA DI SINI ▲▲▲
+
+
+// ============================================================
+// TEKS PERMOHONAN — TUKAR TEKS UNBAN DI BAHAGIAN INI
+// Gunakan {PHONE} untuk letak nombor telefon secara automatik
+// Gunakan {TYPE} untuk letak jenis ban
+// Gunakan {VERSION} untuk letak versi
+// ============================================================
+
+const UNBAN_TEXTS = {
+
+  // ──────────────────────────────────────────
+  // SPAM
+  // ──────────────────────────────────────────
+  'SPAM_V1': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun WhatsApp — Spam — {PHONE}',
+    // ▼▼▼ TUKAR TEKS SPAM V1 DI SINI ▼▼▼
+    body: `Equipe de Suporte do WhatsApp,
+Venho respeitosamente solicitar a revisão do bloqueio aplicado à minha conta do WhatsApp, pois acredito que a restrição ocorreu devido a um erro de classificação automática como spam.
+Gostaria de esclarecer que utilizo esta conta exclusivamente para comunicação legítima, pessoal e/ou profissional, sempre em conformidade com os Termos de Serviço e a Política de Uso Aceitável do WhatsApp. Em nenhum momento houve a intenção de realizar envios em massa, atividades automatizadas ou qualquer prática que viole as diretrizes da plataforma.
+Caso tenha ocorrido um volume incomum de mensagens em um curto período, isso pode ter sido resultado de uma situação pontual e não intencional. Desde já, comprometo-me a redobrar a atenção para evitar qualquer comportamento que possa ser interpretado como atividade irregular no futuro.
+Peço, por gentileza, que realizem uma nova análise manual da minha conta e, se possível, procedam com o restabelecimento do acesso o mais breve possível, pois esta conta é de extrema importância para minha comunicação diária.
+Agradeço antecipadamente pela atenção, compreensão e apoio.
+Atenciosamente,
+{PHONE}`
+    // ▲▲▲ TUKAR TEKS SPAM V1 DI SINI ▲▲▲
+  },
+
+  'SPAM_V2': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun WhatsApp — Spam Pro — {PHONE}',
+    // ▼▼▼ TUKAR TEKS SPAM V2 DI SINI ▼▼▼
+    body: `Teks Unban Permanent/Spam V2
+
+Olá, equipe de suporte do WhatsApp. Sou repp76 e gostaria de reclamar sobre o problema do meu número ter sido banido. Tenho certeza de que nunca violei as regras do WhatsApp. Uso o aplicativo apenas para vender produtos que garanto serem seguros para o público. Nunca pratiquei nenhuma atividade proibida pelo WhatsApp, nem mesmo minimamente. Vendo produtos apenas para ganhar dinheiro e ajudar meus irmãos e familiares. Imploro ao WhatsApp que desbloqueie minha conta. Preciso do WhatsApp para sustentar minha família. Peço encarecidamente ao WhatsApp que não bloqueie meu número. Se o WhatsApp constatar que violei alguma regra, pode ter sido um engano meu. Peço sinceras desculpas ao WhatsApp. Preciso da conta para vender meus produtos e dar o dinheiro das vendas aos meus irmãos e pais. Imploro ao WhatsApp que desbloqueie minha conta e não a bloqueie.
+
+Número da conta do WhatsApp: {PHONE}
+
+Obrigado.`
+    // ▲▲▲ TUKAR TEKS SPAM V2 DI SINI ▲▲▲
+  },
+
+  'SPAM_V3': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun WhatsApp — Spam Advanced — {PHONE}',
+    // ▼▼▼ TUKAR TEKS SPAM V3 DI SINI ▼▼▼
+    body: `Teks Unban Permanent/Spam
+
+Hello WhatsApp support team. I am repp76 and would like to complain about the problem of my account being banned. I am very confident that I have never violated the rules set by WhatsApp. I only use the WhatsApp application to sell products that are guaranteed to be safe for public use. I have never done any activities prohibited by WhatsApp, even a little bit. I only sell products to earn money and give them to my siblings and family. I beg WhatsApp to unblock my WhatsApp account. I need a WhatsApp account to earn money to feed my family. I really beg WhatsApp not to ban my number from using the WhatsApp application. If WhatsApp finds that I have violated the rules, it may be a mistake that I did not realize. I apologize profusely to WhatsApp. I need a WhatsApp account to sell my products and give the proceeds from the sale to my siblings and parents. I beg WhatsApp to unblock my WhatsApp account and not ban it.
+
+WhatsApp account number: {PHONE}
+
+Thank you.`
+    // ▲▲▲ TUKAR TEKS SPAM V3 DI SINI ▲▲▲
+  },
+
+  'SPAM_V4': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun WhatsApp — Spam Elite — {PHONE}',
+    // ▼▼▼ TUKAR TEKS SPAM V4 DI SINI ▼▼▼
+    body: `Olá, equipe de suporte do WhatsApp. Eu (Prabowo) gostaria de solicitar a remoção das restrições da minha conta do WhatsApp. Nunca violei as regras estabelecidas pelo WhatsApp. Tenho certeza de que este problema se deve a um erro no sistema do aplicativo. Gostaria de pedir ao WhatsApp que remova as restrições. Terei uma reunião importante no trabalho. Solicito que as restrições da minha conta do WhatsApp sejam removidas imediatamente.
+
+Este é o meu número de WhatsApp: {PHONE}
+
+Obrigado.`
+    // ▲▲▲ TUKAR TEKS SPAM V4 DI SINI ▲▲▲
+  },
+
+
+  // ──────────────────────────────────────────
+  // PERMANENT FRESH
+  // ──────────────────────────────────────────
+  'PERMANENT FRESH_V1': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun Baharu — Permanent Fresh — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT FRESH V1 DI SINI ▼▼▼
+    body: `Permanent Ban Appeal – Manual Review Request
+Prepared by @croysan
+
+Dear WhatsApp Support Team,
+
+I am writing this appeal with respect and sincerity to request a thorough manual review of the permanent ban imposed on my WhatsApp account. I genuinely believe that this decision may have resulted from an incorrect automated detection or an unintended misclassification of my account activity.
+
+I fully understand and respect WhatsApp's Terms of Service and Usage Policies. I would like to emphasize that I have always intended to use this account legitimately and responsibly, without engaging in unauthorized automation, third-party applications, scripts, bots, intentional bulk messaging, or any activities intended to violate WhatsApp's policies.
+
+I acknowledge that certain usage patterns, such as a sudden increase in message volume or a high frequency of interactions within a short period, may have unintentionally triggered WhatsApp's security systems and been interpreted as suspicious activity. However, I would like to clarify that I have never intended to engage in abusive behavior, fraudulent activities, or spam.
+
+This WhatsApp account holds significant personal and/or professional importance to me, as it is used for essential daily communication. Losing access to this account has caused considerable inconvenience, and I sincerely hope to have the opportunity to regain access.
+
+I am fully willing to make any necessary adjustments to my account usage and strictly follow all WhatsApp recommendations and policies moving forward to ensure that this situation does not happen again.
+
+In light of these circumstances, I respectfully request that my account be reviewed manually by a member of the WhatsApp Support Team rather than relying solely on automated systems. If the review confirms that no intentional violation has occurred, I would be extremely grateful if the permanent ban could be reconsidered and my account access restored.
+
+Thank you for your time, patience, and consideration. I sincerely appreciate your attention to this appeal and hope for a fair and positive resolution.
+
+Yours faithfully,
+
+Account Information:
+
+- WhatsApp Phone Number: {PHONE}
+- Device: Android / iOS
+- Country: {Negara nombor yang diban}
+
+Thank you for your understanding and assistance.`
+    // ▲▲▲ TUKAR TEKS PERMANENT FRESH V1 DI SINI ▲▲▲
+  },
+
+  'PERMANENT FRESH_V2': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Buka Semula Akaun Baharu — Permanent Fresh Pro — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT FRESH V2 DI SINI ▼▼▼
+    body: `WhatsApp Permanent Ban Appeal
+Submitted by kaizenV official 
+
+Dear WhatsApp Support Team,
+
+I am writing to respectfully request a reconsideration of the restriction placed on my WhatsApp account. I was surprised to discover that my number had been permanently banned, as I was not aware of any activity that would justify such a serious restriction.
+
+I have always regarded WhatsApp as a reliable communication platform and have used it as part of my regular daily activities. My interactions mainly involve communicating with customers, responding to inquiries, sharing product information, and maintaining business relationships.
+
+It is possible that some of my account activities may have appeared unusual to your automated security system. However, I kindly ask that these activities be evaluated in their proper context rather than being treated as a confirmed violation without further investigation.
+
+I understand that WhatsApp must maintain strict security standards to protect its users. I fully respect these measures and have no intention of compromising the safety, privacy, or experience of other users.
+
+I am therefore requesting a fair and independent assessment of my account. I would appreciate it if your review team could examine the circumstances surrounding this restriction and determine whether the ban was applied correctly.
+
+If my account is eligible for reinstatement, I would be grateful for the opportunity to continue using WhatsApp while remaining mindful of its policies and security requirements.
+
+Thank you for taking the time to consider my request. I sincerely hope this matter can be resolved through a careful review and a fair decision.
+
+Kind regards,
+
+Account Holder: kaizen official 
+WhatsApp Number: {PHONE}`
+    // ▲▲▲ TUKAR TEKS PERMANENT FRESH V2 DI SINI ▲▲▲
+  },
+
+  'PERMANENT FRESH_V3': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi — Permanent Fresh Advanced — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT FRESH V3 DI SINI ▼▼▼
+    body: `Hello WhatsApp support team. I am repp76 and would like to complain about the problem of my account being banned. I am very confident that I have never violated the rules set by WhatsApp. I only use the WhatsApp application to sell products that are guaranteed to be safe for public use. I have never done any activities prohibited by WhatsApp, even a little bit. I only sell products to earn money and give them to my siblings and family. I beg WhatsApp to unblock my WhatsApp account. I need a WhatsApp account to earn money to feed my family. I really beg WhatsApp not to ban my number from using the WhatsApp application. If WhatsApp finds that I have violated the rules, it may be a mistake that I did not realize. I apologize profusely to WhatsApp. I need a WhatsApp account to sell my products and give the proceeds from the sale to my siblings and parents. I beg WhatsApp to unblock my WhatsApp account and not ban it.
+
+WhatsApp account number: {PHONE}
+
+Thank you.`
+    // ▲▲▲ TUKAR TEKS PERMANENT FRESH V3 DI SINI ▲▲▲
+  },
+
+  'PERMANENT FRESH_V4': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi — Permanent Fresh Elite — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT FRESH V4 DI SINI ▼▼▼
+    body: `طلب استئناف حظر حساب واتساب
+مقدم من: kaizenV official 
+
+إلى فريق دعم واتساب المحترم،
+
+تحية طيبة وبعد،
+
+أتقدم إليكم بهذا الطلب بكل احترام، راجيًا منكم إعادة النظر في قرار حظر حسابي على واتساب. أعتقد بشدة أنني لم أتعمد مخالفة شروط الخدمة أو سياسات الاستخدام الخاصة بواتساب.
+
+أستخدم تطبيق واتساب بشكل أساسي لأغراض تجارية مشروعة، وخاصة للترويج للمنتجات وبيعها، مع الحرص على تقديم منتجات أعتقد أنها آمنة للعملاء. تقتصر أنشطتي على إدارة المبيعات والتواصل مع المشترين وتقديم المعلومات المتعلقة بالمنتجات التي أعرضها.
+
+يمثل هذا النشاط التجاري مصدرًا مهمًا للدخل بالنسبة لي، حيث أعمل من خلاله على توفير الدعم المالي لعائلتي، وخاصة والديّ وإخوتي. ويُعد واتساب وسيلة أساسية تساعدني على التواصل مع العملاء وإدارة أعمالي اليومية.
+
+لم أتعمد مطلقًا القيام بأي نشاط من شأنه الإضرار بالمستخدمين الآخرين أو تهديد أمن المنصة. ومع ذلك، إذا كان أي من تصرفاتي قد تسبب دون قصد في اعتبار حسابي مخالفًا للسياسات، فإنني أقدم اعتذاري الصادق. وربما يكون ذلك نتيجة خطأ غير مقصود لم أكن على علم به، وأنا على استعداد لفهم أي مخالفة محتملة وتصحيحها.
+
+لذلك، أرجو من فريق دعم واتساب التكرم بمراجعة حسابي وإعادة النظر في قرار الحظر النهائي المفروض على رقمي. سأكون ممتنًا للغاية إذا منحتموني فرصة أخرى لاستعادة إمكانية الوصول إلى حسابي ومواصلة استخدام المنصة بطريقة مسؤولة.
+
+آمل منكم أخذ ظروفي بعين الاعتبار، إذ إن استعادة حسابي ستعني لي الكثير، وستساعدني على مواصلة عملي وتوفير الدعم للأشخاص الذين يعتمدون عليّ.
+
+شكرًا جزيلًا لكم على وقتكم وتفهمكم واهتمامكم بهذا الطلب. أقدّر تعاونكم، وأتطلع إلى الحصول على رد إيجابي من فريق الدعم.
+
+مع خالص الاحترام والتقدير،
+
+اسم الحساب: kaizenV official 
+رقم حساب واتساب: {PHONE}`
+    // ▲▲▲ TUKAR TEKS PERMANENT FRESH V4 DI SINI ▲▲▲
+  },
+
+
+  // ──────────────────────────────────────────
+  // PERMANENT HARD
+  // ──────────────────────────────────────────
+  'PERMANENT HARD_V1': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi — Permanent Hard — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT HARD V1 DI SINI ▼▼▼
+    body: `Dear WhatsApp Support Team,
+I respectfully submit this request for a comprehensive review of my WhatsApp account associated with the phone number {PHONE}, which appears to have been permanently banned. I sincerely apologize if any activity from my account unintentionally violated WhatsApp’s Terms of Service, as it was never my intention to misuse the platform in any way. I highly value WhatsApp as my primary communication tool for personal and important matters, and I am fully committed to complying with all policies and guidelines moving forward. I kindly ask for your reconsideration and a detailed review of my account, as I believe this action may have been applied in error or due to circumstances beyond my awareness. I would be deeply grateful for your assistance in restoring access to my account. Thank you for your time, understanding, and consideration.`
+    // ▲▲▲ TUKAR TEKS PERMANENT HARD V1 DI SINI ▲▲▲
+  },
+
+  'PERMANENT HARD_V2': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi — Permanent Hard Pro — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT HARD V2 DI SINI ▼▼▼
+    body: `Prezada equipe de suporte do WhatsApp,
+Venho por meio desta solicitar respeitosamente uma revisão completa da minha conta do WhatsApp associada ao número {PHONE}, que foi permanentemente banida. Peço sinceras desculpas caso alguma atividade tenha violado inadvertidamente os Termos de Serviço, pois nunca tive a intenção de usar a plataforma de forma inadequada. O WhatsApp é essencial para minha comunicação diária, e estou totalmente comprometido em seguir todas as políticas e diretrizes daqui em diante. Peço gentilmente que reconsiderem minha situação e realizem uma análise detalhada, pois acredito que isso possa ter ocorrido por engano. Agradeço profundamente sua atenção e compreensão.`
+    // ▲▲▲ TUKAR TEKS PERMANENT HARD V2 DI SINI ▲▲▲
+  },
+
+  'PERMANENT HARD_V3': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi — Permanent Hard Advanced — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT HARD V3 DI SINI ▼▼▼
+    body: `فريق دعم واتساب المحترم،
+أتقدم إليكم بهذا الطلب بكل احترام لمراجعة حسابي المرتبط برقم {PHONE}، والذي تم حظره بشكل دائم. أعتذر بصدق إذا كان هناك أي نشاط قد خالف سياسات واتساب دون قصد، حيث لم تكن لدي أي نية لانتهاك القوانين. يعتبر واتساب وسيلة تواصل مهمة جدًا بالنسبة لي، وأنا ملتزم تمامًا باتباع جميع السياسات مستقبلاً. أرجو منكم التكرم بمراجعة حسابي مرة أخرى وإعادة تفعيله إذا أمكن، حيث أؤمن أن هذا الحظر قد يكون نتيجة خطأ غير مقصود. أشكركم على وقتكم وتفهمكم.`
+    // ▲▲▲ TUKAR TEKS PERMANENT HARD V3 DI SINI ▲▲▲
+  },
+
+  'PERMANENT HARD_V4': {
+    subject: '[RAYUAN UNBAN] Permohonan Rasmi Mendesak — Permanent Hard Elite — {PHONE}',
+    // ▼▼▼ TUKAR TEKS PERMANENT HARD V4 DI SINI ▼▼▼
+    body: `Kepada Tim Dukungan WhatsApp,
+Dengan hormat, saya ingin mengajukan permohonan peninjauan atas akun WhatsApp saya yang terkait dengan nomor {PHONE}, yang saat ini telah diblokir secara permanen. Saya dengan tulus memohon maaf apabila terdapat aktivitas yang tidak disengaja dan mungkin melanggar ketentuan layanan. Saya sangat menghargai WhatsApp sebagai sarana komunikasi penting, dan saya berkomitmen untuk sepenuhnya mematuhi semua kebijakan yang berlaku di masa mendatang. Saya memohon dengan rendah hati agar tim WhatsApp dapat meninjau kembali keputusan ini dan mempertimbangkan pemulihan akun saya. Terima kasih atas perhatian dan pengertiannya.`
+    // ▲▲▲ TUKAR TEKS PERMANENT HARD V4 DI SINI ▲▲▲
+  },
+
+};
+
+// ============================================================
+// NAVIGATION FUNCTIONS
+// ============================================================
+
+function goToPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goToForm(type, version) {
+  currentType = type;
+  currentVersion = version;
+  previousPage = 'page-' + (
+    type === 'SPAM' ? 'spam' :
+    type === 'PERMANENT FRESH' ? 'perm-fresh' :
+    'perm-hard'
+  );
+
+  // Update form UI
+  document.getElementById('crumb-type').textContent = type;
+  document.getElementById('crumb-version').textContent = version;
+  document.getElementById('form-title').innerHTML =
+    `BORANG <span>${type} ${version}</span>`;
+
+  // Generate unique request ID
+  const reqId = 'WA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2,4).toUpperCase();
+  document.getElementById('request-id').textContent = 'REF: ' + reqId;
+  document.getElementById('request-id').dataset.reqId = reqId;
+
+  // Clear phone input
+  document.getElementById('phone-input').value = '';
+
+  goToPage('page-form');
+}
+
+function goBack() {
+  goToPage(previousPage);
+}
+
+// ============================================================
+// FORM SUBMIT — OPEN GMAIL
+// ============================================================
+
+function submitForm() {
+  const phone = document.getElementById('phone-input').value.trim();
+
+  if (!phone) {
+    flashInput();
+    return;
+  }
+
+  if (!/^\+[0-9]{7,15}$/.test(phone)) {
+    flashInput();
+    alert('⚠ Format nombor tidak sah. Sila gunakan format: +60112345678');
+    return;
+  }
+
+  const key = currentType + '_' + currentVersion;
+  const textObj = UNBAN_TEXTS[key];
+
+  if (!textObj) {
+    alert('Ralat: Teks permohonan tidak dijumpai.');
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ms-MY', { year: 'numeric', month: 'long', day: 'numeric' });
+  const reqId = document.getElementById('request-id').dataset.reqId || 'WA-UNKNOWN';
+
+  // Replace placeholders
+  const subject = textObj.subject
+    .replace(/{PHONE}/g, phone)
+    .replace(/{TYPE}/g, currentType)
+    .replace(/{VERSION}/g, currentVersion)
+    .replace(/{DATE}/g, dateStr)
+    .replace(/{REQUEST_ID}/g, reqId);
+
+  const body = textObj.body
+    .replace(/{PHONE}/g, phone)
+    .replace(/{TYPE}/g, currentType)
+    .replace(/{VERSION}/g, currentVersion)
+    .replace(/{DATE}/g, dateStr)
+    .replace(/{REQUEST_ID}/g, reqId);
+
+  // Guna mailto: — cara paling universal untuk buka Gmail APP terus
+  // Android & iOS akan tanya pilih app email, Gmail akan muncul
+  const mailtoUrl = 'mailto:' + RECIPIENT_EMAIL
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+
+  window.location.href = mailtoUrl;
+}
+
+function flashInput() {
+  const input = document.getElementById('phone-input');
+  input.style.borderColor = '#ef4444';
+  input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.25)';
+  input.focus();
+  setTimeout(() => {
+    input.style.borderColor = '';
+    input.style.boxShadow = '';
+  }, 1500);
+}
+
+// ============================================================
+// NOISE CANVAS
+// ============================================================
+(function() {
+  const canvas = document.getElementById('noise');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const d = ctx.createImageData(w, h);
+    for (let i = 0; i < d.data.length; i += 4) {
+      const v = Math.random() * 255;
+      d.data[i] = v; d.data[i+1] = v; d.data[i+2] = 255; d.data[i+3] = 16;
+    }
+    ctx.putImageData(d, 0, 0);
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+
+</body>
+</html>
